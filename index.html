@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NaviGuide - Assistance for Visually Impaired</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .sonar {
+            animation: sonar 2s infinite;
+        }
+        @keyframes sonar {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+            70% { box-shadow: 0 0 0 30px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .vibrate {
+            animation: vibrate 0.3s linear infinite;
+        }
+        @keyframes vibrate {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-md">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">NaviGuide</h1>
+            <p class="text-slate-600">Your Voice-Guided Navigation Assistant</p>
+        </header>
+
+        <main>
+            <!-- Voice Input Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <button id="startVoice" class="w-full flex items-center justify-center space-x-3 bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="bi bi-mic-fill text-2xl pulse"></i>
+                    <span>Start Voice Navigation</span>
+                </button>
+                <div id="transcription" class="mt-4 p-4 bg-slate-100 rounded-lg min-h-[100px] hidden">
+                    <p class="text-slate-700"></p>
+                </div>
+            </div>
+
+            <!-- Current Location Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4 text-slate-800">Current Location</h2>
+                <div id="location" class="flex items-center justify-between bg-slate-100 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="bi bi-geo-alt-fill text-blue-600 text-xl mr-3"></i>
+                        <span id="locationText" class="text-slate-700">Detecting location...</span>
+                    </div>
+                    <button id="refreshLocation" class="text-blue-600 hover:text-blue-800">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Destination Input -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4 text-slate-800">Your Destination</h2>
+                <div class="flex mb-4">
+                    <input type="text" id="destinationInput" placeholder="Where do you want to go?" class="flex-1 border border-slate-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label="Enter your destination">
+                    <button id="searchDestination" class="bg-blue-600 text-white px-4 rounded-r-lg hover:bg-blue-700">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Controls -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4 text-slate-800">Navigation Controls</h2>
+                <div class="space-y-4">
+                    <button id="startNavigation" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors">
+                        Start Navigation
+                    </button>
+                    <button id="stopNavigation" class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition-colors hidden">
+                        Stop Navigation
+                    </button>
+                    <button id="whereAmI" class="w-full bg-amber-600 text-white py-3 rounded-lg hover:bg-amber-700 transition-colors">
+                        Where Am I?
+                    </button>
+                </div>
+            </div>
+
+            <!-- Help Features -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 text-slate-800">Assistance Features</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="emergencyAlert" class="flex flex-col items-center p-4 bg-red-100 rounded-lg hover:bg-red-200">
+                        <i class="bi bi-exclamation-triangle-fill text-2xl text-red-600 mb-2"></i>
+                        <span class="text-sm text-slate-800">Emergency Alert</span>
+                    </button>
+                    <button id="objectDetection" class="flex flex-col items-center p-4 bg-blue-100 rounded-lg hover:bg-blue-200">
+                        <i class="bi bi-camera-fill text-2xl text-blue-600 mb-2"></i>
+                        <span class="text-sm text-slate-800">Object Detection</span>
+                    </button>
+                    <button id="readText" class="flex flex-col items-center p-4 bg-green-100 rounded-lg hover:bg-green-200">
+                        <i class="bi bi-file-text-fill text-2xl text-green-600 mb-2"></i>
+                        <span class="text-sm text-slate-800">Read Text</span>
+                    </button>
+                    <button id="callAssistance" class="flex flex-col items-center p-4 bg-purple-100 rounded-lg hover:bg-purple-200">
+                        <i class="bi bi-telephone-fill text-2xl text-purple-600 mb-2"></i>
+                        <span class="text-sm text-slate-800">Call Assistance</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Alert Modal -->
+        <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg p-6 max-w-sm mx-4">
+                <div class="text-center mb-4">
+                    <i id="alertIcon" class="bi bi-exclamation-circle-fill text-4xl text-amber-500"></i>
+                </div>
+                <h3 id="alertTitle" class="text-xl font-bold text-center mb-2">Alert</h3>
+                <p id="alertMessage" class="text-center mb-4">This is an alert message.</p>
+                <button id="closeAlert" class="w-full bg-blue-600 text-white py-2 rounded-lg">OK</button>
+            </div>
+        </div>
+
+        <!-- Lost Location Alert -->
+        <div id="lostLocationAlert" class="fixed inset-0 bg-red-500 bg-opacity-90 flex flex-col items-center justify-center z-50 hidden">
+            <div class="vibrate text-center p-6">
+                <i class="bi bi-geo-alt-fill text-white text-6xl mb-4"></i>
+                <h2 class="text-white text-2xl font-bold mb-2">Location Lost!</h2>
+                <p class="text-white mb-6">Stay calm. We're trying to reconnect.</p>
+                <div class="sonar h-24 w-24 rounded-full bg-white bg-opacity-20 flex items-center justify-center mx-auto">
+                    <div class="h-12 w-12 rounded-full bg-white"></div>
+                </div>
+            </div>
+            <button id="cancelLostAlert" class="mt-8 bg-white text-red-600 font-bold py-3 px-6 rounded-full">
+                I'm Safe - Stop Alert
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize speech recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        // Initialize speech synthesis
+        const synth = window.speechSynthesis;
+
+        // DOM elements
+        const startVoiceBtn = document.getElementById('startVoice');
+        const transcriptionDiv = document.getElementById('transcription');
+        const locationText = document.getElementById('locationText');
+        const refreshLocationBtn = document.getElementById('refreshLocation');
+        const startNavigationBtn = document.getElementById('startNavigation');
+        const stopNavigationBtn = document.getElementById('stopNavigation');
+        const whereAmIBtn = document.getElementById('whereAmI');
+        const destinationInput = document.getElementById('destinationInput');
+        const searchDestinationBtn = document.getElementById('searchDestination');
+        const emergencyAlertBtn = document.getElementById('emergencyAlert');
+        const objectDetectionBtn = document.getElementById('objectDetection');
+        const readTextBtn = document.getElementById('readText');
+        const callAssistanceBtn = document.getElementById('callAssistance');
+        
+        // Alert elements
+        const alertModal = document.getElementById('alertModal');
+        const alertIcon = document.getElementById('alertIcon');
+        const alertTitle = document.getElementById('alertTitle');
+        const alertMessage = document.getElementById('alertMessage');
+        const closeAlertBtn = document.getElementById('closeAlert');
+
+        // Lost location alert
+        const lostLocationAlert = document.getElementById('lostLocationAlert');
+        const cancelLostAlertBtn = document.getElementById('cancelLostAlert');
+
+        // App state
+        let isListening = false;
+        let navigationActive = false;
+        let navigationInterval;
+        let locationCheckInterval;
+        let lastKnownLocation = null;
+        let locationLost = false;
+        let lostLocationSound;
+
+        // Speech recognition handlers
+        recognition.onstart = () => {
+            speak("Voice recognition activated. Please speak your destination or command.");
+            isListening = true;
+            startVoiceBtn.classList.add('bg-red-600');
+            startVoiceBtn.classList.remove('bg-blue-600');
+            startVoiceBtn.querySelector('span').textContent = "Listening...";
+            transcriptionDiv.classList.remove('hidden');
+        };
+
+        recognition.onresult = (event) => {
+            const transcript = Array.from(event.results)
+                .map(result => result[0])
+                .map(result => result.transcript)
+                .join('');
+            
+            transcriptionDiv.querySelector('p').textContent = transcript;
+            
+            if (event.results[event.results.length - 1].isFinal) {
+                processVoiceCommand(transcript);
+            }
+        };
+
+        recognition.onend = () => {
+            if (isListening) {
+                recognition.start();
+            } else {
+                startVoiceBtn.classList.remove('bg-red-600');
+                startVoiceBtn.classList.add('bg-blue-600');
+                startVoiceBtn.querySelector('span').textContent = "Start Voice Navigation";
+                transcriptionDiv.classList.add('hidden');
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error', event.error);
+            speak("I had trouble understanding. Please try again.");
+            if (isListening) {
+                recognition.stop();
+                setTimeout(() => {
+                    if (isListening) recognition.start();
+                }, 500);
+            }
+        };
+
+        // Helper function to speak text
+        function speak(text) {
+            if (synth.speaking) {
+                synth.cancel(); // Stop current speech to prioritize new message
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.0; // Normal speaking rate
+            utterance.pitch = 1.0; // Normal pitch
+            utterance.volume = 1.0; // Full volume
+            synth.speak(utterance);
+            
+            return new Promise((resolve) => {
+                utterance.onend = resolve;
+            });
+        }
+
+        // Process voice commands
+        function processVoiceCommand(command) {
+            command = command.toLowerCase();
+            console.log("Processing voice command:", command);
+            
+            // Navigation commands
+            if (command.includes('stop') || command.includes('cancel')) {
+                stopNavigation();
+            } else if (command.includes('where am i')) {
+                announceCurrentLocation();
+            } else if (command.includes('start navigation') || command.includes('begin navigation')) {
+                startNavigation();
+            } 
+            // Destination setting
+            else if (command.includes('take me to') || command.includes('navigate to') || command.includes('go to')) {
+                const destination = command.replace(/take me to|navigate to|go to/gi, '').trim();
+                if (destination) {
+                    destinationInput.value = destination;
+                    speak(`Setting destination to ${destination}`);
+                    setTimeout(() => startNavigation(), 2000);
+                } else {
+                    speak("I didn't catch the destination. Please try again.");
+                }
+            }
+            // Help features
+            else if (command.includes('emergency') || command.includes('help me')) {
+                triggerEmergencyAlert();
+            } else if (command.includes('detect') || command.includes('what') && command.includes('see')) {
+                startObjectDetection();
+            } else if (command.includes('read') && (command.includes('text') || command.includes('this'))) {
+                startTextReading();
+            } else if (command.includes('call') && command.includes('assistance')) {
+                callForAssistance();
+            }
+        }
+
+        // Location handling
+        function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const { latitude, longitude } = position.coords;
+                            lastKnownLocation = { latitude, longitude };
+                            locationText.textContent = `Lat: ${latitude.toFixed(4)}, Long: ${longitude.toFixed(4)}`;
+                            resolve({ latitude, longitude });
+                        },
+                        (error) => {
+                            locationText.textContent = "Unable to retrieve location";
+                            reject(error);
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                } else {
+                    locationText.textContent = "Geolocation is not supported";
+                    reject(new Error("Geolocation not supported"));
+                }
+            });
+        }
+
+        async function announceCurrentLocation() {
+            try {
+                await speak("Checking your current location...");
+                const location = await getCurrentLocation();
+                
+                // In a real app, this would use reverse geocoding to get a human-readable address
+                speak("You are currently at latitude " + location.latitude.toFixed(2) + 
+                      " and longitude " + location.longitude.toFixed(2) + 
+                      ". This is approximately near Main Street.");
+            } catch (error) {
+                speak("I'm unable to determine your location. Please check your location permissions.");
+            }
+        }
+
+        function checkLocationContinuously() {
+            locationCheckInterval = setInterval(async () => {
+                try {
+                    await getCurrentLocation();
+                    
+                    if (locationLost) {
+                        locationLost = false;
+                        hideLostLocationAlert();
+                        speak("Location signal restored.");
+                    }
+                } catch (error) {
+                    if (!locationLost && navigationActive) {
+                        locationLost = true;
+                        showLostLocationAlert();
+                    }
+                }
+            }, 5000);
+        }
+
+        // Navigation controls
+        async function startNavigation() {
+            try {
+                const location = await getCurrentLocation();
+                const destination = destinationInput.value.trim();
+                
+                if (!destination) {
+                    speak("Please enter or speak your destination first.");
+                    return;
+                }
+                
+                navigationActive = true;
+                startNavigationBtn.classList.add('hidden');
+                stopNavigationBtn.classList.remove('hidden');
+                
+                await speak(`Starting navigation to ${destination}. I'll guide you with voice instructions.`);
+                
+                // Start continuous location checking
+                checkLocationContinuously();
+                
+                // Simulate navigation updates
+                let step = 0;
+                const directions = [
+                    "Continue straight ahead for 100 meters",
+                    "In 50 meters, turn right onto Oak Street",
+                    "Continue on Oak Street for 200 meters",
+                    "Pedestrian crossing ahead. Wait for the signal to change",
+                    "Cross the street now",
+                    "Continue straight for 100 meters",
+                    "Your destination will be on your left in 30 meters",
+                    "You have arrived at your destination"
+                ];
+                
+                navigationInterval = setInterval(() => {
+                    if (navigationActive) {
+                        if (step < directions.length) {
+                            speak(directions[step]);
+                            step++;
+                        } else {
+                            stopNavigation();
+                            speak("You have reached your destination.");
+                        }
+                    }
+                }, 15000); // Directions every 15 seconds
+            } catch (error) {
+                speak("I couldn't start navigation. Please check your location settings and try again.");
+            }
+        }
+
+        function stopNavigation() {
+            navigationActive = false;
+            locationLost = false;
+            startNavigationBtn.classList.remove('hidden');
+            stopNavigationBtn.classList.add('hidden');
+            
+            clearInterval(navigationInterval);
+            clearInterval(locationCheckInterval);
+            hideLostLocationAlert();
+            
+            speak("Navigation stopped");
+        }
+
+        // Alert management
+        function showAlert(title, message, icon = "bi-info-circle-fill", iconColor = "text-blue-500") {
+            alertTitle.textContent = title;
+            alertMessage.textContent = message;
+            alertIcon.className = `bi ${icon} text-4xl ${iconColor}`;
+            alertModal.classList.remove('hidden');
+        }
+
+        function showLostLocationAlert() {
+            lostLocationAlert.classList.remove('hidden');
+            speak("Warning! Location signal lost. Please stay in place while we try to reconnect.");
+            
+            // Create beeping sound
+            lostLocationSound = new Audio();
+            lostLocationSound.src = "data:audio/wav;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAAFAAAGhgCFhYWFhYWFhYWFhYWFhYWFhYXx8fHx8fHx8fHx8fHx8fHx8fH////////////////////////////////8AAAA/TE1MAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVEFHAAAACwAAABpFbmdpbmVlcmVkIGJ5IFNvdW5kIEZvcmdlAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//sQxAADwAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=";
+            lostLocationSound.loop = true;
+            lostLocationSound.play();
+        }
+
+        function hideLostLocationAlert() {
+            lostLocationAlert.classList.add('hidden');
+            if (lostLocationSound) {
+                lostLocationSound.pause();
+                lostLocationSound = null;
+            }
+        }
+
+        // Assistance features
+        function triggerEmergencyAlert() {
+            speak("Emergency alert activated. Contacting emergency services with your location.");
+            showAlert("Emergency Alert", "Emergency services have been notified of your location and situation.", "bi-exclamation-triangle-fill", "text-red-600");
+        }
+
+        async function startObjectDetection() {
+            await speak("Starting object detection...");
+            
+            // This would use device camera and AI in a real app
+            setTimeout(() => {
+                speak("I can see a pathway in front of you. There's a bench on your right side about 2 meters away. The path continues straight ahead and is clear of obstacles.");
+            }, 2000);
+        }
+
+        async function startTextReading() {
+            await speak("Starting text recognition. Please point your camera at the text you want to read.");
+            
+            // This would use device camera and OCR in a real app
+            setTimeout(() => {
+                speak("The text says: Welcome to Central Park. Open daily from 6 AM to 10 PM.");
+            }, 2000);
+        }
+
+        function callForAssistance() {
+            speak("Calling for assistance. Please wait while I connect you to a support agent.");
+            showAlert("Assistance Request", "Connecting you to a support agent. Please wait.", "bi-telephone-fill", "text-green-600");
+            
+            // Simulate a response after 3 seconds
+            setTimeout(() => {
+                speak("Support agent connected. How can I help you today?");
+            }, 3000);
+        }
+
+        // Event listeners
+        startVoiceBtn.addEventListener('click', () => {
+            if (!isListening) {
+                recognition.start();
+            } else {
+                isListening = false;
+                recognition.stop();
+            }
+        });
+
+        refreshLocationBtn.addEventListener('click', announceCurrentLocation);
+        startNavigationBtn.addEventListener('click', startNavigation);
+        stopNavigationBtn.addEventListener('click', stopNavigation);
+        whereAmIBtn.addEventListener('click', announceCurrentLocation);
+        searchDestinationBtn.addEventListener('click', () => {
+            if (destinationInput.value.trim()) {
+                speak(`Setting destination to ${destinationInput.value}`);
+            } else {
+                speak("Please enter a destination first");
+            }
+        });
+
+        // Help feature buttons
+        emergencyAlertBtn.addEventListener('click', triggerEmergencyAlert);
+        objectDetectionBtn.addEventListener('click', startObjectDetection);
+        readTextBtn.addEventListener('click', startTextReading);
+        callAssistanceBtn.addEventListener('click', callForAssistance);
+        
+        // Alert handlers
+        closeAlertBtn.addEventListener('click', () => {
+            alertModal.classList.add('hidden');
+        });
+        
+        cancelLostAlertBtn.addEventListener('click', () => {
+            hideLostLocationAlert();
+        });
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            getCurrentLocation().catch(error => {
+                speak("Please enable location services to use navigation features.");
+            });
+
+            // Initial welcome message
+            setTimeout(() => {
+                speak("Welcome to NaviGuide. Your voice assistant for navigation. Tap the microphone button and tell me where you want to go, or ask 'Where am I?' for your current location.");
+            }, 1000);
+        });
+
+        // Accessibility enhancements
+        document.querySelectorAll('button').forEach(button => {
+            button.setAttribute('role', 'button');
+            if (!button.getAttribute('aria-label')) {
+                button.setAttribute('aria-label', button.textContent.trim());
+            }
+        });
+        
+        // Make sure input field has proper role
+        destinationInput.setAttribute('role', 'textbox');
+        destinationInput.setAttribute('aria-label', 'Enter your destination');
+
+        // Handle speech recognition not available
+        if (!SpeechRecognition) {
+            showAlert("Speech Recognition Not Available", 
+                "Your browser doesn't support speech recognition. Please use a modern browser like Chrome.", 
+                "bi-exclamation-circle-fill", 
+                "text-red-600");
+            startVoiceBtn.disabled = true;
+            startVoiceBtn.classList.add('opacity-50');
+        }
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
